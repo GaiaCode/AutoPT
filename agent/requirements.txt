@@ -1,5 +1,6 @@
 openai
 requests
-playwright
 pydantic
 tqdm
+playwright==1.55.0
+beautifulsoup4

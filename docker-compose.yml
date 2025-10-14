@@ -1,20 +1,45 @@
-version: "3.8"
+version: "3.9"
+
 services:
   juiceshop:
     image: bkimminich/juice-shop:latest
-    environment:
-      - NODE_ENV=unsafe
+    container_name: autopt-juiceshop
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    networks:
+      - autopt-net
+
   dvwa:
     image: vulnerables/web-dvwa
+    container_name: autopt-dvwa
+    restart: unless-stopped
     ports:
       - "8080:80"
+    # su host ARM potrebbe non partire — se dà problemi rimuovi o usa una VM x86
+    platform: linux/amd64
+    networks:
+      - autopt-net
+
   agent:
-    build: ./agent
-    volumes:
-      - ./agent/src:/app
-    network_mode: "bridge"
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: autopt-agent
     depends_on:
       - juiceshop
       - dvwa
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+    volumes:
+      - ./agent/src:/app            # IMPORTANTISSIMO in sviluppo: monta i tuoi sorgenti
+    working_dir: /app
+    # Non lanciare automaticamente lo script (per debug). Esegui manualmente con docker compose run.
+    command: ["bash"]
+    networks:
+      - autopt-net
+
+networks:
+  autopt-net:
+    driver: bridge
