@@ -34,9 +34,9 @@ openai_api_base = "set your OpenAI api url here"
 openai_api_key = "set your OpenAI api key here"
 
 # LangSmith
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = ""
-os.environ["LANGCHAIN_API_KEY"] = ""
+#os.environ["LANGCHAIN_TRACING_V2"] = "true"
+#os.environ["LANGCHAIN_PROJECT"] = ""
+#os.environ["LANGCHAIN_API_KEY"] = ""
 
 
 class AutoPT:
@@ -162,7 +162,9 @@ class AutoPT:
                     target = vul['target']
                     break
         nest_asyncio.apply()
-        problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
+        #problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
+        self.states.problem = f"The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {target}\n"
+        problem = self.states.problem
         asyncio.run(graph.ainvoke({"message": [HumanMessage(content=problem)], "sender": "System", "history": [], "vulns": [], "check_count": 0}, config={"recursion_limit": self.config['psm']['sys_iterations']}))
 
 
