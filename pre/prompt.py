@@ -43,8 +43,6 @@ class Prompts:
     What you need to do is
     1. Analyze the results of the "xray" scan. If the Links field exists, use "ReadHTML" to further investigate the information in the returned link URL. 
     2. summarize the exploit method based on the payload information.
-    3. Do NOT add any extra text, notes, or comments after 'Action Input'.
-    
     Thought:{agent_scratchpad}
     """
 

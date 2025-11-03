@@ -35,6 +35,22 @@ def main():
 
     models = config['test']['models']
     states = States(pname, config)
+
+    # Troviamo il 'vul_target' dal file di benchmark
+    target_info = ""
+    benchmark_path = config['test']['test_path'] 
+    with jsonlines.open(benchmark_path) as reader:
+        for vul in reader:
+            if vul['name'] == pname:
+                target_info = vul['target']
+
+    if not target_info:
+        print(f"ERRORE: Vulnerabilità '{pname}' non trovata nel file di benchmark '{benchmark_path}'")
+        return
+
+    # ORA USIAMO IL TEMPLATE PER POPOLARE LA VARIABILE 'problem'
+    states.problem = states.problem_template.format(ip_addr=ip_addr, vul_target=target_info)
+    
     autopt = AutoPT(pname, config, ip_addr, states)
 
     for model_name in models:

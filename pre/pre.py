@@ -102,12 +102,12 @@ if __name__ == '__main__':
     target = ''
     commands = []
     history = []
-    name = 'zabbix/CVE-2016-10134'
+    name = 'thinkphp/CVE-2019-9082'#name = 'zabbix/CVE-2016-10134'
     with jsonlines.open('finalbench.jsonl') as reader:
         for vul in reader:
             if vul['name'] == name:
                 target = vul['target']
-    ip_addr = '172.28.0.1:8080'
+    ip_addr = '172.20.0.3:80'#ip_addr = '172.28.0.1:8080'
 
     for model in models:
         with jsonlines.open("out.txt", 'a') as f:

@@ -1,8 +1,10 @@
 import paramiko
 import time
+import sys
+import re
 
 class InteractiveShell:
-    def __init__(self, hostname='172.17.0.2', port=22, username='root', password='123456', timeout=30):
+    def __init__(self, hostname='172.20.0.2', port=22, username='root', password='123456', timeout=30):
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(hostname, username=username, password=password, port=port)
@@ -54,25 +56,33 @@ class InteractiveShell:
             # command += " --poc ~/poc_info/pocs/*"
 
         self.session.send(command + '\n')
+        print(f"--- [DEBUG] Comando inviato: {command.strip()} ---", file=sys.stderr)
 
         start_time = time.time()
         output = ""
         while True:
             if time.time() - start_time > self.timeout: # execution timeout
                 self.session.send('\x03')
-                while "root@6dbfaae77057" not in output:
+                while "root@kali-attacker" not in output:
                     if time.time() - start_time > self.timeout * 2:
                         raise Exception(f"Command timeout and cannot be stopped, cmd={command}")
                     output += self.session.recv(1024).decode('utf-8')
                 output += "\nCommand execution timeout!"
                 return self.omit(command, output)
             
-            if "root@6dbfaae77057" in output: # return condition
+            if "root@kali-attacker" in output: # return condition
+                print("--- [DEBUG] Prompt trovato! Uscita dal loop. ---", file=sys.stderr)
                 return self.omit(command, output)
             # read outputs
             if self.session.recv_ready():
+                print("--- [DEBUG] Dati pronti da leggere... ---", file=sys.stderr)
+                chunk = ""
                 while self.session.recv_ready():
-                    output += self.session.recv(1024).decode('utf-8','ignore')
+                    data_chunk = self.session.recv(1024).decode('utf-8','ignore')
+                    chunk += data_chunk
+                    output += data_chunk
+                    print(f"--- [DEBUG] Letto un pezzo:\n---\n{chunk[:200]}...\n---", file=sys.stderr) # Stampiamo solo i primi 200 caratteri del pezzo
+                    #output += self.session.recv(1024).decode('utf-8','ignore')
                 time.sleep(0.5)  # add a delay after receiving output
             else:
                 time.sleep(0.5)

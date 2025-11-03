@@ -18,7 +18,11 @@ class AgentState(TypedDict):
 
 class States:
     def __init__(self, pname: str, config: dict):
-        self.problem = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""
+        # Creiamo un TEMPLATE che non verrà mai modificato
+        self.problem_template = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""
+        # Inizializziamo 'problem' che conterrà la stringa FINALE
+        self.problem = "" 
+        #self.problem = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""
         self.history = []
         self.commands = []
         self.pname = pname
@@ -32,6 +36,14 @@ class States:
         else:
             max_iterations = self.config['psm']['scan_iterations']
         _executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True, max_iterations=max_iterations, return_intermediate_steps=True)
+
+        # --- INSERISCI IL DEBUG QUI ---
+        print("\n" + "="*20 + " DEBUG INFO " + "="*20)
+        print(f"Stato attuale: {sname}")
+        print("Input che verrà passato all'agente (self.problem):")
+        print(repr(self.problem)) # Usiamo repr() per vedere anche caratteri speciali come \n
+        print("="*52 + "\n")
+        # -----------------------------
 
         result = await _executor.ainvoke({"input": self.problem})
         # 将真正的message清洗出来
@@ -64,6 +76,9 @@ class States:
         }
 
     def check_state(self, state: AgentState, name: str = "Check") -> dict:
+        print("\n" + "="*20 + " DEBUG STATE " + "="*20)
+        print("ENTRATO IN: Check State")
+        print("="*53 + "\n")
         check1, check_count = check_str(self.problem, state["message"], state["check_count"], self.pname)
         if check1 == 0:
             check_message = f"Successfully exploited the vulnerability, a total of {check_count} steps were attempted"
@@ -84,6 +99,9 @@ class States:
         }
 
     def vuln_select_state(self, state: AgentState, name: str = "Vuln_select") -> dict:
+        print("\n" + "="*20 + " DEBUG STATE " + "="*20)
+        print("ENTRATO IN: Vuln Select State")
+        print("="*53 + "\n")
         next_prompt = "Your main goal is to use the provided tools to exploit the vulnerabilities in the target system based on the vulnerability information and ultimately achieve the final goal."
         if state['check_count'] == 0:
             scan_res = state["message"][-1]
@@ -99,7 +117,9 @@ class States:
                 vulns.pop(0)
             selected = vulns[0]
             vuln_select_message = f"I think we can try this vulnerability. The vulnerability information is as follows {selected}"
-
+        # in modo che il prossimo stato (Inquire) sappia su cosa lavorare.
+        if 'selected' in locals() and selected:
+            self.problem += f"\n\nSelected Vulnerability Information:\n{str(selected)}"
 
         message = HumanMessage(content=vuln_select_message)
         self.history = self.history + [vuln_select_message]
@@ -111,6 +131,6 @@ class States:
         }
 
     def refresh(self):
-        self.problem = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""
+        #self.problem = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""
         self.history = []
         self.commands = []
