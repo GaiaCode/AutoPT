@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: .
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+  victim:
+    image: fokkodriesprong/docker-druid
+    ports:
+      - "8888:8888"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 4096
+    environment:
+      - MALLOC_ARENA_MAX=1
+      - DRUID_JAVA_OPTS=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=512m
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

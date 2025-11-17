@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  attacker:
+    build: 
+      context: ..
+      dockerfile: Dockerfile
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2 # L'IP esatto che il codice si aspetta!
+    dns: # <-- AGGIUNGI QUESTA SEZIONE
+      - 8.8.8.8
+      - 8.8.4.4
+  
+  victim:
+    image: vulhub/thinkphp:5.0.20
+    ports:
+      - "8080:80"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3 # Un IP diverso sulla stessa rete
+    dns: # <-- AGGIUNGI QUESTA SEZIONE
+      - 8.8.8.8
+      - 8.8.4.4
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

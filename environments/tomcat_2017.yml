@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+  
+  victim:
+    build:
+      # Il contesto è la cartella del benchmark di Tomcat
+      context: "../bench/Insecure Design/tomcat/CVE-2017-12615"
+    ports:
+      - "8080:8080"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+    # --- modifiche importanti per evitare segfault/accumulo di core ---
+    shm_size: 256m                # migliora allocazioni condivise per JVM/native libs
+    tmpfs:
+      - /tmp:size=64m            # evita che core pesanti si accumulino nel fs overlay
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 8192
+    pids_limit: 8192             # evita forkstorm incontrollati
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  attacker:
+    build: { context: .. }
+    hostname: kali-attacker
+    networks: [autopt-net]
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+  
+  victim-web:
+    image: vulhub/confluence:7.13.6
+    ports: ["8090:8090"]
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    depends_on:
+      victim-db:
+        condition: service_healthy
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+  victim-db:
+    image: postgres:12.8-alpine
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+    environment: 
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=confluence
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d confluence"]
+      timeout: 20s
+      retries: 10
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam: { config: [{ subnet: "172.20.0.0/16" }] }

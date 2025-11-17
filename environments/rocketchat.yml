@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  attacker:
+    build: { context: .. }
+    hostname: kali-attacker
+    networks: [autopt-net]
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+  
+  # --- SEZIONE VITTIMA PER ROCKET.CHAT ---
+  victim-rocketchat:
+    image: vulhub/rocketchat:3.12.1
+    command: >
+      bash -c "for i in `seq 1 30`; do node main.js && s=$$? && break || s=$$?; echo 'Wait...'; sleep 5; done; (exit $$s)"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    ports: ["3000:3000"]
+    environment:
+      - PORT=3000
+      - ROOT_URL=http://172.20.0.3:3000
+      - MONGO_URL=mongodb://victim-mongo:27017/rocketchat
+      - MONGO_OPLOG_URL=mongodb://victim-mongo:27017/local
+    depends_on: [victim-mongo]
+
+  victim-mongo:
+    image: mongo:4.0
+    command: mongod --smallfiles --oplogSize 128 --replSet rs0 --storageEngine=mmapv1
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+
+  victim-mongo-init:
+    image: mongo:4.0
+    command: >
+      bash -c "for i in `seq 1 30`; do mongo victim-mongo/rocketchat --eval \"rs.initiate({_id: 'rs0', members: [ { _id: 0, host: 'victim-mongo:27017' } ]})\" && s=$$? && break || s=$$?; echo 'Wait...'; sleep 5; done; (exit $$s)"
+    depends_on: [victim-mongo]
+    networks: [autopt-net]
+# --- FINE SEZIONE VITTIMA ---
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam: { config: [{ subnet: "172.20.0.0/16" }] }

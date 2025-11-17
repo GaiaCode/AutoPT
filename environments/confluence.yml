@@ -2,37 +2,33 @@ version: '3.8'
 
 services:
   attacker:
-    build: .
+    build:
+      context: ..
     hostname: kali-attacker
     networks:
       autopt-net:
         ipv4_address: 172.20.0.2
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+    dns: [ "8.8.8.8", "8.8.4.4" ]
   
   victim-web:
-    image: vulhub/phpmyadmin:4.8.1
+    image: vulhub/confluence:7.13.6
     ports:
-      - "8080:80"
+      - "8090:8090"
     networks:
       autopt-net:
         ipv4_address: 172.20.0.3
     depends_on:
       - victim-db
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+    dns: [ "8.8.8.8", "8.8.4.4" ]
 
   victim-db:
-    image: mysql:5.5
+    image: postgres:12.8-alpine
     environment: 
-      - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      - MYSQL_DATABASE=test
-      - MYSQL_USER=test
-      - MYSQL_PASSWORD=test
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=confluence
     networks:
       autopt-net:
+        ipv4_address: 172.20.0.4
 
 networks:
   autopt-net:

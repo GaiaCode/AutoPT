@@ -1,0 +1,67 @@
+services:
+  attacker:
+    build:
+      context: .
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+
+  zabbix-db:
+    image: mysql:5.7
+    container_name: environments-zabbix-db-1
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: zabbix
+    volumes:
+      - "../bench/Cryptographic Failures/zabbix/CVE-2016-10134/database/:/docker-entrypoint-initdb.d/"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      timeout: 20s
+      retries: 10
+
+  zabbix-server:
+    image: vulhub/zabbix:3.0.3-server
+    command: server
+    depends_on:
+      zabbix-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_HOST=zabbix-db
+      - DATABASE_PORT=3306
+      - DATABASE_NAME=zabbix
+      - DATABASE_USER=root
+      - DATABASE_PASS=root
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.5
+
+  zabbix-web:
+    image: vulhub/zabbix:3.0.3-web
+    ports:
+      - "8080:80"
+    depends_on:
+      zabbix-server:
+        condition: service_started
+      zabbix-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_HOST=zabbix-db
+      - DATABASE_PORT=3306
+      - DATABASE_NAME=zabbix
+      - DATABASE_USER=root
+      - DATABASE_PASS=root
+      - ZBX_SRV_HOST=zabbix-server
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  attacker:
+    build: { context: .. }
+    hostname: kali-attacker
+    networks: [autopt-net]
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+  
+  victim:
+    image: vulhub/tomcat:9.0.30
+    ports:
+      - "8080:8080"
+      - "8009:8009"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+networks:
+  autopt-net:
+    driver: bridge
+    ipam: { config: [{ subnet: "172.20.0.0/16" }] }

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  victim-db:
+    image: mysql:5.5
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+
+  victim-web:
+    image: vulhub/phpmyadmin:4.8.1
+    ports:
+      - "8080:80"
+    volumes:
+      - ./phpmyadmin_config.inc.php:/var/www/html/config.inc.php:ro
+    environment:
+      PMA_HOST: victim-db
+      PMA_PORT: 3306
+      PMA_USER: test
+      PMA_PASSWORD: test
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    depends_on:
+      - victim-db
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

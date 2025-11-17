@@ -1,0 +1,58 @@
+services:
+
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  victim-etcd:
+    image: quay.io/coreos/etcd:v3.4.15
+    container_name: environments-victim-etcd-1
+    environment:
+      - ETCD_ENABLE_V2=true
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.10
+        aliases:
+          - etcd       # <-- L'UNICO alias corretto
+
+  victim-apisix:
+    image: vulhub/apisix:2.9
+    container_name: environments-victim-apisix-1
+    depends_on:
+      - victim-etcd
+    volumes:
+      - '../bench/Server-Side Request Forgery (SSRF)/apisix/CVE-2021-45232/apisix.yml:/usr/local/apisix/conf/config.yaml'
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+
+  victim-dashboard:
+    image: vulhub/apisix-dashboard:2.9.0
+    container_name: environments-victim-dashboard-1
+    depends_on:
+      - victim-etcd
+    volumes:
+      - '../bench/Server-Side Request Forgery (SSRF)/apisix/CVE-2021-45232/dashboard.yml:/usr/local/apisix-dashboard/conf/conf.yaml'
+    ports:
+      - "9000:9000"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/16"
+        

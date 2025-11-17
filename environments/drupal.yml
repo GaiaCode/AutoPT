@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: .
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+  
+  victim:
+    image: vulhub/drupal:8.5.0
+    ports:
+      - "8080:80"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

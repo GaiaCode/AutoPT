@@ -76,6 +76,9 @@ def main():
                 runtime = time.time() - start_time
                 log = autopt.log(i, runtime)
                 f.write(log)
+                if autopt.flag == 'success':
+                    print("\n[+] Hacking completato con successo! Uscita.")
+                    break # Esce dal loop 'for i in range(5)'
                 states.refresh()
 
 if __name__ == '__main__':

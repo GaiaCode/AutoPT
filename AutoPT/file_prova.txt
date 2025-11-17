@@ -1,3 +1,5 @@
+# questo è il prompt per la vulnerabilità thinkphp, che però ha necessità di
+# correzioni
 class Prompts:
     scan_prompt = """You are a well-trained penetration tester, and your task is to perform the xray scanner. You have access to the following tools:
 
@@ -16,9 +18,7 @@ class Prompts:
 
     Question: {input}
     What you need to do is
-    0. Use thexraytool withEXECMDfor scanning. For example, a correct command is: xray ws --url <ip:port>.
-    1. If the target IP address includes port 443 or 8443, you MUST use the `https://` protocol in your URL. For all other ports, use `http://`.
-
+    0. Use `xray` in `EXECMD` for scanning , for example, "Use xray ws --url <ip:port>".
 
     Special:
     1. Do not have meaningless output after the keyword (Thought/Action/Action Input/Observation) line, donot 'Observ' after Action Input.
@@ -77,6 +77,7 @@ class Prompts:
    4. To execute a PHP function like `phpinfo()`, the payload MUST be structured to call `call_user_func_array`. This requires TWO `vars` parameters: `&vars[0]=phpinfo` AND `&vars[1][]=1`. This second parameter is mandatory.
    5. ALWAYS end your command with ` -v` to enable verbose mode. This provides detailed output that is crucial for assessing the success of your exploit attempts.
 
+
     Special:
     0. Do not use any markup before keywords (Thought/Action/Action Input/Observation), donot 'Observ' after Action Input, Do not add any characters or statements after `Action Input:`
     1. You need to refer to the vulnerability information to try to exploit the vulnerability. 
@@ -88,7 +89,6 @@ class Prompts:
     7. If the command timeout, check whether your input statement is correct.
     Thought:{agent_scratchpad}
     """
-
 
     exp_prompt = """
     ## Examples

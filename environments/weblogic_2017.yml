@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks: [autopt-net]
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  victim:
+    image: vulhub/weblogic:10.3.6.0-2017
+    ports:
+      - "7001:7001"
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      - USER_MEM_ARGS=-Xms1024m -Xmx4096m -XX:PermSize=256m -XX:MaxPermSize=1024m
+      - JAVA_OPTIONS=-Djava.security.egd=file:/dev/./urandom
+    mem_limit: 5g
+    mem_reservation: 2g
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/16"

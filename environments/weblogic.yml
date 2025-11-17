@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+  # --- SEZIONE VITTIMA PER WEBLOGIC ---
+  victim-weblogic:
+    image: vulhub/weblogic:10.3.6.0-2017
+    ports:
+      - "7001:7001"
+    restart: unless-stopped
+    environment:
+      # suggerisco di forzare alcune opzioni JVM più conservative per evitare problemi di inizializzazione
+      - JAVA_OPTIONS=-Xms512m -Xmx1024m -XX:MaxPermSize=256m
+    shm_size: 512m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 4096
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3 # Questo è l'IP del nostro target
+    depends_on:
+      - victim-redis
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+  # Redis di servizio: usare l'immagine ufficiale redis (più stabile) oppure una baselinux "stoppable".
+  victim-redis:
+    image: redis:6-alpine
+    restart: unless-stopped
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+# --- FINE SEZIONE VITTIMA ---
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

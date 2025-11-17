@@ -5,7 +5,26 @@ FROM kalilinux/kali-rolling
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Aggiorniamo il sistema e installiamo SSH e gli strumenti base
-RUN apt-get update && apt-get install -y openssh-server sudo curl unzip libpcap-dev
+#RUN apt-get update && apt-get install -y openssh-server sudo curl unzip libpcap-dev python3-pip
+# Installiamo tutto quello che serve PRIMA DI PERDERE l'accesso a internet
+RUN apt-get update && apt-get install -y \
+    openssh-server \
+    sudo \
+    curl \
+    wget \
+    unzip \
+    libpcap-dev \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-setuptools \
+    python3-wheel \
+    python3-requests \
+    iputils-ping \
+    iproute2 \
+    net-tools \
+    dnsutils \
+    && apt-get clean
 
 # Impostiamo la password per l'utente root (quella che il codice si aspetta)
 RUN echo 'root:123456' | chpasswd
@@ -33,6 +52,10 @@ RUN chmod +x xray
 
 # 5. ESEGUI xray UNA VOLTA per forzare la generazione dei file .yml in /root.
 RUN ./xray version
+
+# 3. CREA MANUALMENTE un file config.yaml già configurato per ignorare i certificati SSL.
+#    Usiamo 'echo -e' per scrivere più righe nel file.
+RUN echo -e "version: 2\nhttp:\n  insecure: true" > /root/config.yaml
 
 # 4. Rendi l'eseguibile utilizzabile da qualsiasi punto del sistema
 #    creando un collegamento simbolico in /usr/local/bin che punta al file in /root.

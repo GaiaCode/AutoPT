@@ -162,9 +162,13 @@ class AutoPT:
                     target = vul['target']
                     break
         nest_asyncio.apply()
-        problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
+        try:
+            problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
+        except KeyError:
+            # fallback — only pass IP if vuln structure is broken
+            problem = self.states.problem.format(ip_addr=ip_addr, vul_target="")
+        #problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
         asyncio.run(graph.ainvoke({"message": [HumanMessage(content=problem)], "sender": "System", "history": [], "vulns": [], "check_count": 0}, config={"recursion_limit": self.config['psm']['sys_iterations']}))
-
 
 
     def log(self, i: int, runtime: float) -> dict:

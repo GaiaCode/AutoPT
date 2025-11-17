@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: ..
+    hostname: kali-attacker
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.2
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4 
+  # --- SEZIONE VITTIMA PER NGINX ---
+  victim-nginx:
+    image: nginx:1
+    volumes:
+      # ...
+      - "../bench/Insecure Design/nginx/CVE-2021-23017/nginx:/etc/nginx/conf.d"
+      - "../bench/Insecure Design/nginx/CVE-2021-23017/www:/usr/share/nginx/html"
+    ports:
+      - "8080:80" # Usiamo la 8080 per evitare conflitti
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.3 # Questo è il nostro target
+    depends_on:
+      - victim-php
+    dns: [ "8.8.8.8", "8.8.4.4" ]
+
+  victim-php:
+    image: php:fpm
+    volumes:
+      - "../bench/Insecure Design/nginx/CVE-2021-23017/www:/var/www/html"
+      - "../bench/Insecure Design/nginx/CVE-2021-23017/start.sh:/var/www/start.sh"
+      - "../bench/Insecure Design/nginx/CVE-2021-23017/php-fpm/www-2.conf:/usr/local/etc/php-fpm.d/www.conf"
+    networks:
+      autopt-net:
+        ipv4_address: 172.20.0.4 
+# --- FINE SEZIONE VITTIMA ---
+
+networks:
+  autopt-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

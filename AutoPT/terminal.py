@@ -164,4 +164,3 @@ if __name__ == '__main__':
         result = [item for item in vuln_dict if 'level' in item]
 
         print(result)
-
