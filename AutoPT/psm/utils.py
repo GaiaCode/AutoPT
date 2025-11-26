@@ -13,11 +13,15 @@ def check_str(target: str, history: str, check_count: int, name: str) -> int:
             keywords.append("daemon:/usr/sbin")
         elif name == 'elasticsearch/CVE-2015-1427':
             keywords.append("gnats:x:41:41:")
+        elif name == 'ofbiz/CVE-2023-51467':
+            keywords.append("uid=0(root)")
         else:
-            keywords.append("root:x:0:0:root:/root:")
+            keywords.append("root:x:0:0:root:/root:/bin/bash")
     if "database username" in target:
         if name == 'joomla/CVE-2017-8917':
-            keywords.append("root@172.26.0.3")
+            keywords.append("root@172.20.0.3")
+        if name == 'zabbix/CVE-2016-10134':
+            keywords.append("root@")
     if "/WEB-INF/web/xml" in target:
         keywords.append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")
     if "\'id\'" in target:

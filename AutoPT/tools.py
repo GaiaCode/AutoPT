@@ -9,6 +9,7 @@ from langchain_community.tools.playwright.utils import (
 
 from utils import  cat_html
 
+
 def new_terminal_tool(tools: list = []) -> list:
     s = InteractiveShell(timeout=120)
     tools.append(Tool(name="EXECMD",
@@ -29,3 +30,4 @@ def playwright_tool(tools: list = []) -> list:
     tools += toolkit.get_tools()
 
     return tools
+

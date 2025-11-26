@@ -28,28 +28,42 @@ def retry(max_retries=3, retry_delay=2):
 def cat_html(url: str) -> str:
     # 去掉引号
     url = re.sub(r'^["\']|["\']$', '', url)
+
+    try: 
     
-    # 获取 HTML 内容
-    response = requests.get(url)
-    response.raise_for_status()  # 确保请求成功
-    
-    # 解析 HTML
-    html_content = response.text
-    soup = BeautifulSoup(html_content, "html.parser")
-    
-    # 提取页面上的所有文本内容
-    body_content = soup.find('body')
-    if body_content:
-        text_content = body_content.get_text(separator="\n", strip=True)
-    else:
-        text_content = "No body content found"
-    
-    return text_content
+        # 获取 HTML 内容
+        #response = requests.get(url)
+        response = requests.get(url, verify=False)
+        response.raise_for_status()  # 确保请求成功
+
+        # 解析 HTML
+        html_content = response.text
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # 提取页面上的所有文本内容
+        body_content = soup.find("body")
+
+# Caso 1: Pagina HTML con <body>
+        if body_content:
+            return body_content.get_text(separator="\n", strip=True)
+        
+        # Caso 2: File RAW (markdown, testo puro)
+        text = soup.get_text(separator="\n", strip=True)
+        if text and len(text) > 0:
+            return text
+        
+        # Caso 3: Nessun testo utile
+        return "No readable text found"
+    except requests.exceptions.RequestException as e:
+        # Rendi il tool più robusto: se la richiesta fallisce per qualsiasi motivo,
+        # non farà crashare l'agente ma restituirà un messaggio di errore.
+        return f"Error while trying to read the URL: {str(e)}"
 
     
 def load_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as config_stream:
         return yaml.safe_load(config_stream)
+    
 
 def print_AutoRT():
     ascii_art = """
@@ -63,3 +77,4 @@ def print_AutoRT():
 
     for line in ascii_art.splitlines():
         print(colored(line, color))
+

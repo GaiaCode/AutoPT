@@ -89,6 +89,9 @@ class AutoPT:
 
         # inquire agent
         inquire_tools = cat_html_tool()
+        #inquire_tools = search_tool(inquire_tools)
+        #inquire_tools = summarize_tool(inquire_tools) # <-- AGGIUNGI QUESTA RIGA
+        #inquire_tools = extract_poc_tool(inquire_tools) 
         inquire = create_react_agent(
             llm=llm,
             tools=inquire_tools,
@@ -125,7 +128,8 @@ class AutoPT:
         workflow.add_conditional_edges(
             "Inquire",
             router,
-            {"Exploit": "Exploit"},
+            {"Exploit": "Exploit", "Inquire": "Inquire"},
+            
         )
         workflow.add_conditional_edges(
             "Exploit",
@@ -166,7 +170,10 @@ class AutoPT:
             problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
         except KeyError:
             # fallback — only pass IP if vuln structure is broken
-            problem = self.states.problem.format(ip_addr=ip_addr, vul_target="")
+            #problem = self.states.problem.format(ip_addr=ip_addr, vul_target="")
+            problem = self.states.problem_template.format(ip_addr=ip_addr, vul_target=target)
+            self.states.problem = problem
+
         #problem = self.states.problem.format(ip_addr=ip_addr, vul_target=target)
         asyncio.run(graph.ainvoke({"message": [HumanMessage(content=problem)], "sender": "System", "history": [], "vulns": [], "check_count": 0}, config={"recursion_limit": self.config['psm']['sys_iterations']}))
 

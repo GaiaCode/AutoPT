@@ -102,33 +102,71 @@ class States:
         print("\n" + "="*20 + " DEBUG STATE " + "="*20)
         print("ENTRATO IN: Vuln Select State")
         print("="*53 + "\n")
+
         next_prompt = "Your main goal is to use the provided tools to exploit the vulnerabilities in the target system based on the vulnerability information and ultimately achieve the final goal."
         if state['check_count'] == 0:
-            scan_res = state["message"][-1]
-            vulns = parse_vuln(scan_res.content)
-            if len(vulns) != 0:
-                selected = vulns[0]
-                vuln_select_message = f"I think we can try this vulnerability. The vulnerability information is as follows {selected}"
-            else:
-                vuln_select_message = f"continue to select vulnerability"
-        else:
-            vulns = state["vulns"]
-            if len(vulns) > 1:
-                vulns.pop(0)
-            selected = vulns[0]
-            vuln_select_message = f"I think we can try this vulnerability. The vulnerability information is as follows {selected}"
-        # in modo che il prossimo stato (Inquire) sappia su cosa lavorare.
-        if 'selected' in locals() and selected:
-            self.problem += f"\n\nSelected Vulnerability Information:\n{str(selected)}"
 
-        message = HumanMessage(content=vuln_select_message)
-        self.history = self.history + [vuln_select_message]
-        return {
-            "message": [message],
-            "sender": name,
-            "vulns": vulns,
-            "check_count": state["check_count"]
-        }
+            scan_res = state["message"][-1]
+            all_vulns = parse_vuln(scan_res.content)
+
+            # ---- FILTRO SMART GENERICO (NON specifico per Joomla/OFBiz) ----
+
+            blacklist = ["baseline", "dirscan", "path-traversal-check", "sensitive", "weak-password", "fingerprint"]
+
+            def is_real_vuln(v):
+                vt = v.get("vulntype", "").lower()
+                lvl = v.get("level", "").lower()
+                name = v.get("vuln", "").lower()
+
+                return (
+                    "cve" in vt
+                    or "exploit" in vt
+                    or "poc" in vt
+                    or lvl in ["high", "critical"]
+                    or "cve" in name
+                )
+
+            def is_noise(v):
+                merged = (v.get("vulntype","") + " " + v.get("vuln","")).lower()
+                return any(b in merged for b in blacklist)
+
+            filtered = [v for v in all_vulns if is_real_vuln(v) and not is_noise(v)]
+
+            # ---------------------------------------------------------------
+
+            if len(filtered) == 0:
+                vuln_select_message = (
+                    "The scanner found no specific vulnerabilities. "
+                    "I must now switch to a research-based strategy to find a public PoC."
+                )
+                message = HumanMessage(content=vuln_select_message)
+                self.history.append(vuln_select_message)
+
+                return {
+                    "message": [message],
+                    "sender": name,
+                    "vulns": [],
+                    "check_count": state["check_count"]
+                }
+
+            # Almeno 1 vulnerabilità valida
+            vulns = filtered
+            selected = vulns[0]
+        
+            vuln_select_message = f"I think we can try this vulnerability. The vulnerability information is as follows {selected}"
+        
+            # Aggiunge al problem
+            self.problem += "\n\nSelected Vulnerability Information:\n" + str(selected)
+        
+            message = HumanMessage(content=vuln_select_message)
+            self.history.append(vuln_select_message)
+        
+            return {
+                "message": [message],
+                "sender": name,
+                "vulns": vulns,
+                "check_count": state["check_count"]
+            }
 
     def refresh(self):
         #self.problem = """The ip address of the target machine is {ip_addr}\nNote that you should test your target IP address.\nFinal Goal : {vul_target}\n"""

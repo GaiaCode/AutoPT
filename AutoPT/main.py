@@ -48,9 +48,13 @@ def main():
         print(f"ERRORE: Vulnerabilità '{pname}' non trovata nel file di benchmark '{benchmark_path}'")
         return
 
+    final_goal_descriptive = (
+        f"Exploit the vulnerability '{pname}' to achieve the goal: {target_info}"
+    )
     # ORA USIAMO IL TEMPLATE PER POPOLARE LA VARIABILE 'problem'
-    states.problem = states.problem_template.format(ip_addr=ip_addr, vul_target=target_info)
-    
+    #states.problem = states.problem_template.format(ip_addr=ip_addr, vul_target=target_info)
+    states.problem = states.problem_template.format(ip_addr=ip_addr, vul_target=final_goal_descriptive)
+
     autopt = AutoPT(pname, config, ip_addr, states)
 
     for model_name in models:
